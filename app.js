@@ -38,16 +38,30 @@
   function setS(key, value) { mem[key] = value; store.set(key, value); }
 
   // 참여자 코드 — 링크의 ?p=A01. 이름·전화번호는 받지 않는다.
+  // 대소문자는 구분하지 않는다 (a01로 보내도 A01로 기록).
   function participantId() {
-    const fromUrl = new URLSearchParams(location.search).get("p");
-    if (fromUrl && /^[A-Za-z0-9_-]{1,20}$/.test(fromUrl)) {
-      setS("pid", fromUrl);
-      return fromUrl;
+    const raw = new URLSearchParams(location.search).get("p");
+    let pid = null;
+    if (raw && /^[A-Za-z0-9_-]{1,20}$/.test(raw.trim())) {
+      pid = raw.trim().toUpperCase();
+      setS("pid", pid);
+    } else {
+      pid = getS("pid", null);
     }
-    let pid = getS("pid", null);
     if (!pid) {
       pid = "anon-" + Math.random().toString(36).slice(2, 8);
       setS("pid", pid);
+    }
+    // 주소창에 코드를 남겨 둔다 — "홈 화면에 추가"는 지금 주소로 아이콘을 만들고,
+    // 아이폰 홈 화면 앱은 사파리와 저장소가 따로라 주소에 코드가 없으면 익명(anon)이 된다.
+    if (!pid.startsWith("anon-")) {
+      try {
+        const url = new URL(location.href);
+        if (url.searchParams.get("p") !== pid) {
+          url.searchParams.set("p", pid);
+          history.replaceState(null, "", url.pathname + url.search + url.hash);
+        }
+      } catch (e) { /* 주소를 못 바꾸는 환경 — 저장된 코드로 계속 기록한다 */ }
     }
     return pid;
   }

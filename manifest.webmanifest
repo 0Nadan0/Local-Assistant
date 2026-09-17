@@ -1,7 +1,6 @@
 {
   "name": "우리동네 생활비서",
   "short_name": "생활비서",
-  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f6f4ee",
   "theme_color": "#1d6b57",
