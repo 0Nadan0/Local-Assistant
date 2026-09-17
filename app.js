@@ -34,11 +34,25 @@
     },
   };
   const mem = {}; // localStorage가 막힌 경우를 위한 이번 방문용 사본
-  function getS(key, fallback) { return key in mem ? mem[key] : (mem[key] = store.get(key, fallback)); }
-  function setS(key, value) { mem[key] = value; store.set(key, value); }
+
+  // 참여자별로 나눠 저장하는 것들 — 한 기기를 두 사람이 써도(부부, 검토용 A01~A05) 서로 섞이지 않는다.
+  // 나머지(보낼 기록 대기열·마지막 코드·글자 크기)는 기기 하나에 하나만 둔다.
+  const PER_PERSON = new Set(["consent", "profile", "draft", "saved", "feedback", "opened", "session"]);
+  function storeKey(key) { return PER_PERSON.has(key) && PID ? PID + "." + key : key; }
+  function getS(key, fallback) {
+    const k = storeKey(key);
+    return k in mem ? mem[k] : (mem[k] = store.get(k, fallback));
+  }
+  function setS(key, value) {
+    const k = storeKey(key);
+    mem[k] = value;
+    store.set(k, value);
+  }
 
   // 참여자 코드 — 링크의 ?p=A01. 이름·전화번호는 받지 않는다.
   // 대소문자는 구분하지 않는다 (a01로 보내도 A01로 기록).
+  // PID가 정해지기 전에는 storeKey가 참여자별 구분을 하지 않는다 — 여기서 쓰는 "pid"는 공용 칸이라 문제없다.
+  let PID = null;
   function participantId() {
     const raw = new URLSearchParams(location.search).get("p");
     let pid = null;
@@ -65,7 +79,7 @@
     }
     return pid;
   }
-  const PID = participantId();
+  PID = participantId();
 
   function sessionId() {
     const now = Date.now();
